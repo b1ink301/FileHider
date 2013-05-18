@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		8A5080A81747AD8F003C4BAC /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8A5080A61747AD8F003C4BAC /* InfoPlist.strings */; };
 		8A5080AA1747AD8F003C4BAC /* FileHider.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A5080A91747AD8F003C4BAC /* FileHider.c */; };
+		8A5080BC1747C9DA003C4BAC /* FileHider.h in Headers */ = {isa = PBXBuildFile; fileRef = 8A5080BB1747C9DA003C4BAC /* FileHider.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
 		8A5080A71747AD8F003C4BAC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8A5080A91747AD8F003C4BAC /* FileHider.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = FileHider.c; sourceTree = "<group>"; };
 		8A5080AB1747AD8F003C4BAC /* FileHider-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FileHider-Prefix.pch"; sourceTree = "<group>"; };
+		8A5080BB1747C9DA003C4BAC /* FileHider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileHider.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 		8A5080A31747AD8F003C4BAC /* FileHider */ = {
 			isa = PBXGroup;
 			children = (
+				8A5080BB1747C9DA003C4BAC /* FileHider.h */,
 				8A5080A91747AD8F003C4BAC /* FileHider.c */,
 				8A5080A41747AD8F003C4BAC /* Supporting Files */,
 			);
@@ -90,6 +93,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A5080BC1747C9DA003C4BAC /* FileHider.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -196,7 +200,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_OPTIMIZATION_LEVEL = 1;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
@@ -287,6 +291,7 @@
 				8A5080B01747AD8F003C4BAC /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
