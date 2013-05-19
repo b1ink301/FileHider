@@ -9,7 +9,6 @@ Ah well, this shit is supposed to run on Mountain Lion (10.8.3), 64-bits.
 
 ####Bugz/ToDo:####
 
-*	restoring the original syscalls on unload causes a kernel panic (wtf?!)
 *	come up w/ a better way of brute forcing sysent!
 *	block file from direct lookups (hijack open, stat, lstat)
 

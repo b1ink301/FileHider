@@ -48,6 +48,7 @@
 )
 
 uint64_t KERNEL_MH_START_ADDR;
+static struct sysent *table;
 
 /* syscall hooking defs */
 typedef int32_t sy_call_t ( struct proc *, void *, int * );
