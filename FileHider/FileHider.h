@@ -114,9 +114,6 @@ int new_getdirentries64( struct proc *p, struct getdirentries64_args *uap, user_
 int new_getdirentriesattr( struct proc *p, struct getdirentriesattr_args *uap, register_t *retval );
 
 struct segment_command_64 *find_segment_64(struct mach_header_64 *mh, const char *segname);
-struct section_64 *find_section_64(struct segment_command_64 *seg, const char *name);
-struct load_command *find_load_command(struct mach_header_64 *mh, uint32_t cmd);
-void *find_symbol(struct mach_header_64 *mh, const char *name);
 uint64_t find_kernel_baseaddr( void );
 static struct sysent* find_sysent( void );
 

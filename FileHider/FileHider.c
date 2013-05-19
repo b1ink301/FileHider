@@ -176,41 +176,56 @@ int new_getdirentriesattr( struct proc *p, struct getdirentriesattr_args *uap, r
 
 static struct sysent *find_sysent( void )
 {
-    struct sysent *table;
-    int *nsysent = ( int * ) find_symbol( (struct mach_header_64 *) KERNEL_MH_START_ADDR, "_nsysent" );
-
-    if( nsysent == NULL )
-        return NULL;
-    else
-        DLOG( "[+] Found _nsysent @ %p\n", nsysent );
+    struct sysent *table = NULL;
     
-    // not working on Mountain Lion since memory layout has changed:
+    // finding _sysent by the following calculation is not working
+    // on Mountain Lion since memory layout has changed:
     //      table = (struct sysent *)(((uint64_t)nsysent) -
     //                               ((uint64_t)sizeof(struct sysent) *
     //                               (uint64_t)*nsysent));
-    // so we're off for some dirty brute forcing:
-    int *addr = nsysent;
+    // so we're off for some _sysent brute forcing (credits to: fG!):
+    uint64_t data_address = 0;
+    uint64_t data_size = 0;
     
-    while( 1 )  // o.0!
-    {
-        table = ( struct sysent * ) addr;
+    struct mach_header_64 *mh = ( struct mach_header_64 * ) KERNEL_MH_START_ADDR;
+    
+    if( mh->magic != MH_MAGIC_64 )
+        return NULL;
         
-        if (table[SYS_syscall].sy_narg == 0 &&
+    struct segment_command_64 *segmentCommand = NULL;
+    
+    if( ( segmentCommand = find_segment_64( mh, "__DATA" ) ) == NULL )
+    {
+        DLOG( "[+] Segment command not found!\n" );
+        return NULL;
+    }
+    
+    data_address = segmentCommand->vmaddr;
+    data_size = segmentCommand->vmsize;
+    
+    if( data_address == 0 || data_size == 0 )
+        return NULL;
+    
+    // brute force our way through __DATA section until we find _sysent
+    for( uint64_t i = 0; i < (data_size); i++ )
+    {
+        table = ( struct sysent * ) ( data_address + i );
+        
+        if( table[SYS_syscall].sy_narg == 0 &&
             table[SYS_exit].sy_narg == 1  &&
             table[SYS_fork].sy_narg == 0 &&
             table[SYS_read].sy_narg == 3 &&
             table[SYS_wait4].sy_narg == 4 &&
-            table[SYS_ptrace].sy_narg == 4)
+            table[SYS_ptrace].sy_narg == 4 )
         {
             return table;
         }
-        
-        addr++;
     }
     
     return NULL;
 }
 
+// credits to: snare
 struct segment_command_64 *
 find_segment_64(struct mach_header_64 *mh, const char *segname)
 {
@@ -237,117 +252,7 @@ find_segment_64(struct mach_header_64 *mh, const char *segname)
     return foundseg;
 }
 
-struct section_64 *
-find_section_64(struct segment_command_64 *seg, const char *name)
-{
-    struct section_64 *sect, *foundsect = NULL;
-    u_int i = 0;
-    
-    /* First section begins straight after the segment header */
-    for (i = 0, sect = (struct section_64 *)((uint64_t)seg + (uint64_t)sizeof(struct segment_command_64));
-         i < seg->nsects;
-         i++, sect = (struct section_64 *)((uint64_t)sect + sizeof(struct section_64)))
-    {
-        /* Check section name */
-        if (strcmp(sect->sectname, name) == 0) {
-            foundsect = sect;
-            break;
-        }
-    }
-    
-    /* Return the section (NULL if we didn't find it) */
-    return foundsect;
-}
-
-struct load_command *
-find_load_command(struct mach_header_64 *mh, uint32_t cmd)
-{
-    struct load_command *lc, *foundlc;
-    
-    /* First LC begins straight after the mach header */
-    lc = (struct load_command *)((uint64_t)mh + sizeof(struct mach_header_64));
-    while ((uint64_t)lc < (uint64_t)mh + (uint64_t)mh->sizeofcmds) {
-        if (lc->cmd == cmd) {
-            foundlc = (struct load_command *)lc;
-            break;
-        }
-        
-        /* Next LC */
-        lc = (struct load_command *)((uint64_t)lc + (uint64_t)lc->cmdsize);
-    }
-    
-    /* Return the load command (NULL if we didn't find it) */
-    return foundlc;
-}
-
-void *
-find_symbol(struct mach_header_64 *mh, const char *name)
-{
-    struct symtab_command *msymtab = NULL;
-    struct segment_command_64 *mlc = NULL;
-    struct segment_command_64 *mlinkedit = NULL;
-    void *mstrtab = NULL;
-    
-    struct nlist_64 *nl = NULL;
-    char *str;
-    uint64_t i;
-    void *addr = NULL;
-    
-    /*
-     * Check header
-     */
-    if (mh->magic != MH_MAGIC_64) {
-        DLOG("FAIL: magic number doesn't match - 0x%x\n", mh->magic);
-        return NULL;
-    }
-    
-    /*
-     * Find TEXT section
-     */
-    mlc = find_segment_64(mh, SEG_TEXT);
-    if (!mlc) {
-        DLOG("FAIL: couldn't find __TEXT\n");
-        return NULL;
-    }
-    
-    /*
-     * Find the LINKEDIT and SYMTAB sections
-     */
-    mlinkedit = find_segment_64(mh, SEG_LINKEDIT);
-    if (!mlinkedit) {
-        DLOG("FAIL: couldn't find __LINKEDIT\n");
-        return NULL;
-    }
-    
-    msymtab = (struct symtab_command *)find_load_command(mh, LC_SYMTAB);
-    if (!msymtab) {
-        DLOG("FAIL: couldn't find SYMTAB\n");
-        return NULL;
-    }
-    
-    /*
-     * Enumerate symbols until we find the one we're after
-     *
-     *  Be sure to use NEW calculation STRTAB in Mountain Lion!
-     */
-    mstrtab = (void *)((int64_t)mlinkedit->vmaddr + (msymtab->stroff - mlinkedit->fileoff));
-    
-    // First nlist_64 struct is NOW located @:
-    for (i = 0, nl = (struct nlist_64 *)(mlinkedit->vmaddr + (msymtab->symoff - mlinkedit->fileoff));
-         i < msymtab->nsyms;
-         i++, nl = (struct nlist_64 *)((uint64_t)nl + sizeof(struct nlist_64)))
-    {
-        str = (char *)mstrtab + nl->n_un.n_strx;
-        
-        if (strcmp(str, name) == 0) {
-            addr = (void *)nl->n_value;
-        }
-    }
-    
-    /* Return the address (NULL if we didn't find it) */
-    return addr;
-}
-
+// credits to: fG!
 uint64_t find_kernel_baseaddr( )
 {
     uint8_t idtr[ 10 ];
